@@ -6,25 +6,33 @@
 
 #include "src/vulkan/instance.h"
 #include "src/vulkan/device.h"
+#include "src/vulkan/swapchain.h"
 
 int main() {
 	glfwInit();
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 	GLFWwindow* window = glfwCreateWindow(800, 600, "VkRender", nullptr, nullptr);
-
+	
 	InstanceContext instanceContext;
 	DeviceContext deviceContext(instanceContext.getInstance());
-	
+
 	VkSurfaceKHR surface;
 	if (glfwCreateWindowSurface(instanceContext.getInstance(), window, nullptr, &surface) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create surface");
-	} else {
+	}
+	else {
 		std::cout << "surface created" << std::endl;
 	}
 
-	while (!glfwWindowShouldClose(window)) {
-		glfwPollEvents();
+	{
+		SwapchainContext swapchainContext(deviceContext.getDevice(), deviceContext.getPhysicalDevice(), surface, deviceContext.getGraphicsFamilyIndex());
+
+		while (!glfwWindowShouldClose(window)) {
+			glfwPollEvents();
+		}
+
+		vkDeviceWaitIdle(deviceContext.getDevice());
 	}
 
 	vkDestroySurfaceKHR(instanceContext.getInstance(), surface, nullptr);

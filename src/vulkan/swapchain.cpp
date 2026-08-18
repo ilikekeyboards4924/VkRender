@@ -3,8 +3,13 @@
 #include <iostream>
 #include <stdexcept>
 
-SwapchainContext::SwapchainContext(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface) {
+SwapchainContext::SwapchainContext(VkDevice device, VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, uint32_t queueFamilyIndex) {
+	m_device = device;
 
+	pickSurfaceFormat(physicalDevice, surface);
+	pickSurfaceCapabilities(physicalDevice, surface);
+	createSwapchain(device, surface, queueFamilyIndex);
+	createSwapchainImageViews(device);
 }
 
 void SwapchainContext::pickSurfaceFormat(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface) {
@@ -45,6 +50,7 @@ void SwapchainContext::createSwapchain(VkDevice device, VkSurfaceKHR surface, ui
 		.imageColorSpace = m_surfaceFormat.colorSpace,
 		.imageExtent = m_surfaceCapabilities.currentExtent,
 		.imageArrayLayers = 1, // 1 for monitor, 2 for VR
+		.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
 		.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
 		.queueFamilyIndexCount = 1,
 		.pQueueFamilyIndices = &queueFamilyIndices,
@@ -54,6 +60,7 @@ void SwapchainContext::createSwapchain(VkDevice device, VkSurfaceKHR surface, ui
 		.clipped = VK_TRUE, // discard hidden pixels
 		.oldSwapchain = nullptr,
 	};
+
 
 	if (vkCreateSwapchainKHR(device, &swapchainInfo, nullptr, &m_swapchain) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create swapchain");
@@ -65,4 +72,37 @@ void SwapchainContext::createSwapchain(VkDevice device, VkSurfaceKHR surface, ui
 	vkGetSwapchainImagesKHR(device, m_swapchain, &swapchainImageCount, nullptr);
 	m_swapchainImages.resize(swapchainImageCount);
 	vkGetSwapchainImagesKHR(device, m_swapchain, &swapchainImageCount, m_swapchainImages.data());
+}
+
+void SwapchainContext::createSwapchainImageViews(VkDevice device) {
+	m_swapchainImageViews.resize(m_swapchainImages.size());
+
+	for (uint32_t i = 0; i < m_swapchainImages.size(); i++) {
+		VkImageViewCreateInfo imageViewInfo{
+			.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+			.image = m_swapchainImages[i],
+			.viewType = VK_IMAGE_VIEW_TYPE_2D, // i think this is the correct one?
+			.format = m_surfaceFormat.format,
+			.subresourceRange = {
+				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+				.baseMipLevel = 0,
+				.levelCount = 1,
+				.baseArrayLayer = 0,
+				.layerCount = 1,
+			},
+		};
+		
+		if (vkCreateImageView(device, &imageViewInfo, nullptr, &m_swapchainImageViews[i]) != VK_SUCCESS) {
+			throw std::runtime_error("failed to create image view");
+		} else {
+			std::cout << "image view created" << std::endl;
+		}
+	}
+}
+
+SwapchainContext::~SwapchainContext() {
+	vkDestroySwapchainKHR(m_device, m_swapchain, nullptr);
+	for (uint32_t i = 0; i < m_swapchainImageViews.size(); i++) {
+		vkDestroyImageView(m_device, m_swapchainImageViews[i], nullptr);
+	}
 }

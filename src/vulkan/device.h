@@ -9,6 +9,7 @@ public:
 	VkPhysicalDevice getPhysicalDevice() const { return m_physicalDevice; };
 	VkDevice getDevice() const { return m_device; };
 	VkQueue getGraphicsQueue() const { return m_graphicsQueue; };
+	uint32_t getGraphicsFamilyIndex() const { return m_graphicsFamilyIndex; };
 private:
 	void pickPhysicalDevice(VkInstance instance);
 	void pickQueueFamily();
