@@ -11,6 +11,7 @@ add_executable(VkRender
 	src/vulkan/instance.cpp
 	src/vulkan/device.cpp
 	src/vulkan/swapchain.cpp
+	src/vulkan/pipeline.cpp
 )
 
 target_include_directories(VkRender PRIVATE
