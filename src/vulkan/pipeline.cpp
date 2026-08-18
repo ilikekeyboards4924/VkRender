@@ -3,11 +3,31 @@
 #include <iostream>
 #include <stdexcept>
 
-PipelineContext::PipelineContext(VkDevice device, VkExtent2D extent) {
-	createGraphicsPipeline(device, extent);
+PipelineContext::PipelineContext(VkDevice device, VkFormat format, VkExtent2D extent) {
+	createGraphicsPipeline(device, format, extent);
 }
 
-void PipelineContext::createGraphicsPipeline(VkDevice device, VkExtent2D extent) {
+void PipelineContext::createGraphicsPipeline(VkDevice device, VkFormat format, VkExtent2D extent) {
+	VkPipelineRenderingCreateInfo renderingInfo{
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
+		.colorAttachmentCount = 1,
+		.pColorAttachmentFormats = &format,
+	};
+
+	VkPipelineShaderStageCreateInfo vertexShaderStageInfo{
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+		.stage = VK_SHADER_STAGE_VERTEX_BIT,
+		.module = nullptr, // shader code in vector of bytes
+		.pName = "main", // entry point of the shader program
+	};
+	VkPipelineShaderStageCreateInfo fragmentShaderStageInfo{
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+		.stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+		.module = nullptr, // shader code in vector of bytes
+		.pName = "main", // entry point of the shader program
+	};
+	VkPipelineShaderStageCreateInfo shaderStages[2] = { vertexShaderStageInfo, fragmentShaderStageInfo };
+
 	VkPipelineVertexInputStateCreateInfo vertexInputStateInfo{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
 		.vertexBindingDescriptionCount = 0, // zero for now, define these later for a vertex buffer
@@ -82,8 +102,9 @@ void PipelineContext::createGraphicsPipeline(VkDevice device, VkExtent2D extent)
 
 	VkGraphicsPipelineCreateInfo pipelineInfo{
 		.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+		.pNext = &renderingInfo,
 		.stageCount = 2, // vertex and fragment
-		.pStages = nullptr, // array of shaders
+		.pStages = shaderStages, // array of shaders
 		.pVertexInputState = &vertexInputStateInfo,
 		.pInputAssemblyState = &inputAssemblyStateInfo,
 		.pViewportState = &viewportStateInfo,

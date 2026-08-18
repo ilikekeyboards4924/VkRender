@@ -55,9 +55,14 @@ void DeviceContext::createDevice() {
 
 	const char* deviceExtensions = { "VK_KHR_swapchain" };
 	const VkPhysicalDeviceFeatures deviceFeatures = { VK_KHR_dynamic_rendering };
+	const VkPhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeatures{
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES,
+		.dynamicRendering = VK_TRUE,
+	};
 
 	VkDeviceCreateInfo deviceInfo{
 		.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+		.pNext = &dynamicRenderingFeatures,
 		.queueCreateInfoCount = 1,
 		.pQueueCreateInfos = &queueInfo,
 		.enabledExtensionCount = 1,

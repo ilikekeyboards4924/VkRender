@@ -8,6 +8,8 @@ public:
 	~SwapchainContext();
 
 	VkExtent2D getExtent() const { return m_surfaceCapabilities.currentExtent; };
+	VkFormat getFormat() const { return m_surfaceFormat.format; };
+
 	std::vector<VkImage> getSwapchainImages() const { return m_swapchainImages; };
 	std::vector<VkImageView> getSwapchainImageViews() const { return m_swapchainImageViews; };
 private:

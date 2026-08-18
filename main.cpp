@@ -28,7 +28,7 @@ int main() {
 
 	{
 		SwapchainContext swapchainContext(deviceContext.getDevice(), deviceContext.getPhysicalDevice(), surface, deviceContext.getGraphicsFamilyIndex());
-		PipelineContext pipelineContext(deviceContext.getDevice(), swapchainContext.getExtent());
+		PipelineContext pipelineContext(deviceContext.getDevice(), swapchainContext.getFormat(), swapchainContext.getExtent());
 
 		while (!glfwWindowShouldClose(window)) {
 			glfwPollEvents();
