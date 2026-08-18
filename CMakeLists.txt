@@ -9,6 +9,7 @@ find_package(Vulkan REQUIRED)
 add_executable(VkRender 
 	main.cpp
 	src/vulkan/instance.cpp
+	src/vulkan/device.cpp
 )
 
 target_include_directories(VkRender PRIVATE
