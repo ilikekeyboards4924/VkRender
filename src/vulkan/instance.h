@@ -8,7 +8,7 @@ public:
 
 	VkInstance getInstance() const { return m_instance; };
 private:
-	VkInstance m_instance = VK_NULL_HANDLE;
-
 	void createInstance();
+
+	VkInstance m_instance = VK_NULL_HANDLE;
 };

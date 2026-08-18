@@ -70,6 +70,9 @@ void DeviceContext::createDevice() {
 	} else {
 		std::cout << "logical device created" << std::endl;
 	}
+
+	// once we have a logical device, retrieve the graphics queue
+	vkGetDeviceQueue(m_device, m_graphicsFamilyIndex, 0, &m_graphicsQueue);
 }
 
 DeviceContext::~DeviceContext() {

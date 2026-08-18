@@ -10,6 +10,7 @@ add_executable(VkRender
 	main.cpp
 	src/vulkan/instance.cpp
 	src/vulkan/device.cpp
+	src/vulkan/swapchain.cpp
 )
 
 target_include_directories(VkRender PRIVATE
