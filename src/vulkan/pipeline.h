@@ -1,5 +1,7 @@
 #pragma once
 #include <vulkan/vulkan.h>
+#include <vector>
+#include <string>
 
 class PipelineContext {
 public:
@@ -8,8 +10,15 @@ public:
 
 	VkPipeline getPipeline() const { return m_graphicsPipeline; };
 private:
+	std::vector<char> readShaderFile(const std::string& filename);
+	VkShaderModule createShaderModule(VkDevice device, const std::vector<char>& codeBytes);
 	void createGraphicsPipeline(VkDevice device, VkFormat format, VkExtent2D extent);
 
 	VkPipeline m_graphicsPipeline = VK_NULL_HANDLE;
 	VkPipelineLayout m_pipelineLayout;
+
+	VkShaderModule m_vertexShaderModule = VK_NULL_HANDLE;
+	VkShaderModule m_fragmentShaderModule = VK_NULL_HANDLE;
+
+	VkDevice m_device = VK_NULL_HANDLE; // use for destruction
 };

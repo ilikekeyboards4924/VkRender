@@ -1,10 +1,51 @@
 #include "pipeline.h"
 #include <vector>
+#include <fstream>
 #include <iostream>
 #include <stdexcept>
+#include <string>
 
 PipelineContext::PipelineContext(VkDevice device, VkFormat format, VkExtent2D extent) {
+	m_device = device;
+
 	createGraphicsPipeline(device, format, extent);
+}
+
+std::vector<char> PipelineContext::readShaderFile(const std::string& filename) {
+	std::ifstream file(filename, std::ios::ate | std::ios::binary);
+
+	if (!file.is_open()) {
+		throw std::runtime_error("failed to open file");
+	}
+
+	std::vector<char> buffer(file.tellg());
+	file.seekg(0, std::ios::beg);
+	file.read(buffer.data(), static_cast<std::streamsize>(buffer.size()));
+
+	file.close();
+
+	std::cout << "read file \"" << filename << "\" of size: " << buffer.size() << std::endl;
+
+	if (buffer.size() % 4 != 0) {
+		throw std::runtime_error("shader file size is not a multiple of 4");
+	}
+
+	return buffer;
+}
+
+VkShaderModule PipelineContext::createShaderModule(VkDevice device, const std::vector<char>& codeBytes) {
+	VkShaderModuleCreateInfo shaderModuleInfo{
+		.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+		.codeSize = codeBytes.size(),
+		.pCode = reinterpret_cast<const uint32_t*>(codeBytes.data()) // copied from vulkan docs
+	};
+
+	VkShaderModule shaderModule;
+	if (vkCreateShaderModule(device, &shaderModuleInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create shader module");
+	}
+
+	return shaderModule;
 }
 
 void PipelineContext::createGraphicsPipeline(VkDevice device, VkFormat format, VkExtent2D extent) {
@@ -14,16 +55,18 @@ void PipelineContext::createGraphicsPipeline(VkDevice device, VkFormat format, V
 		.pColorAttachmentFormats = &format,
 	};
 
+	m_vertexShaderModule = createShaderModule(device, readShaderFile("shader/vertex.vert.spv"));
 	VkPipelineShaderStageCreateInfo vertexShaderStageInfo{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
 		.stage = VK_SHADER_STAGE_VERTEX_BIT,
-		.module = nullptr, // shader code in vector of bytes
+		.module = m_vertexShaderModule, // shader code in vector of bytes
 		.pName = "main", // entry point of the shader program
 	};
+	m_fragmentShaderModule = createShaderModule(device, readShaderFile("shader/fragment.frag.spv"));
 	VkPipelineShaderStageCreateInfo fragmentShaderStageInfo{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
 		.stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-		.module = nullptr, // shader code in vector of bytes
+		.module = m_fragmentShaderModule, // shader code in vector of bytes
 		.pName = "main", // entry point of the shader program
 	};
 	VkPipelineShaderStageCreateInfo shaderStages[2] = { vertexShaderStageInfo, fragmentShaderStageInfo };
@@ -41,7 +84,14 @@ void PipelineContext::createGraphicsPipeline(VkDevice device, VkFormat format, V
 		.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
 	};
 
-	VkViewport viewport{ .width = static_cast<float>(extent.width), .height = static_cast<float>(extent.height) };
+	VkViewport viewport{ 
+		.x = 0.0f,
+		.y = 0.0f,
+		.width = static_cast<float>(extent.width), 
+		.height = static_cast<float>(extent.height),
+		.minDepth = 0.0f,
+		.maxDepth = 1.0f,
+	};
 	VkRect2D scissorRectangle{ .extent = extent };
 	VkPipelineViewportStateCreateInfo viewportStateInfo{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
@@ -81,7 +131,7 @@ void PipelineContext::createGraphicsPipeline(VkDevice device, VkFormat format, V
 		.pAttachments = &colorBlendAttachmentState,
 	};
 
-	// don't know, copied from vulkan docs
+	// normally viewport and scissor rectangles are baked into pipeline at creation, but this tells the pipeline that these two things have dynamic states
 	std::vector<VkDynamicState> dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
 	VkPipelineDynamicStateCreateInfo dynamicStateInfo{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
@@ -91,8 +141,8 @@ void PipelineContext::createGraphicsPipeline(VkDevice device, VkFormat format, V
 
 	VkPipelineLayoutCreateInfo layoutInfo{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-		.setLayoutCount = 0, // don't know, copied from vulkan docs
-		.pushConstantRangeCount = 0, // don't know, copied from vulkan docs
+		.setLayoutCount = 0, // descriptor set layout count
+		.pushConstantRangeCount = 0, // push constant range count
 	};
 	if (vkCreatePipelineLayout(device, &layoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create pipeline layout");
@@ -116,7 +166,7 @@ void PipelineContext::createGraphicsPipeline(VkDevice device, VkFormat format, V
 		.renderPass = nullptr, // not needed since dynamic rendering
 	};
 
-	if (vkCreateGraphicsPipelines(device, nullptr, 1, &pipelineInfo, nullptr, &m_graphicsPipeline) != VK_SUCCESS) { // this will not work until i have written the SPIR-V file reading logic
+	if (vkCreateGraphicsPipelines(device, nullptr, 1, &pipelineInfo, nullptr, &m_graphicsPipeline) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create graphics pipeline");
 	} else {
 		std::cout << "graphics pipeline created" << std::endl;
@@ -124,5 +174,8 @@ void PipelineContext::createGraphicsPipeline(VkDevice device, VkFormat format, V
 }
 
 PipelineContext::~PipelineContext() {
-
+	vkDestroyPipeline(m_device, m_graphicsPipeline, nullptr);
+	vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
+	vkDestroyShaderModule(m_device, m_vertexShaderModule, nullptr);
+	vkDestroyShaderModule(m_device, m_fragmentShaderModule, nullptr);
 }
