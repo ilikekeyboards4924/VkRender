@@ -1,4 +1,5 @@
 #pragma once
+#include "swapchain.h"
 #include <vulkan/vulkan.h>
 #include <vector>
 
@@ -7,11 +8,21 @@ public:
 	CommandContext(VkDevice device, uint32_t queueFamilyIndex, uint32_t swapchainImagesCount);
 	~CommandContext();
 
-	void drawFrame(VkDevice device);
+	void drawFrame(VkDevice device, SwapchainContext& swapchainContext, VkPipeline pipeline, VkQueue queue);
 private:
 	void createCommandPool(VkDevice device, uint32_t queueFamilyIndex);
 	void createCommandBuffers(VkDevice device);
 	void createSynchronizationObjects(VkDevice device, uint32_t swapchainImagesCount);
+	void transitionImageLayout(
+		VkImage image,
+		VkImageLayout oldLayout,
+		VkImageLayout newLayout,
+		VkAccessFlags2 srcAccessBitmask,
+		VkAccessFlags2 dstAccessBitmask,
+		VkPipelineStageFlags2 srcStageBitmask,
+		VkPipelineStageFlags2 dstStageBitmask
+	);
+	void recordCommandBuffer(VkPipeline pipeline, VkImage image, VkImageView imageView, VkExtent2D extent);
 
 	VkCommandPool m_commandPool;
 	std::vector<VkCommandBuffer> m_commandBuffers;

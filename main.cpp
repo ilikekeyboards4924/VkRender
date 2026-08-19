@@ -33,6 +33,8 @@ int main() {
 		CommandContext commandContext(deviceContext.getDevice(), deviceContext.getGraphicsFamilyIndex(), swapchainContext.getSwapchainImages().size());
 
 		while (!glfwWindowShouldClose(window)) {
+			commandContext.drawFrame(deviceContext.getDevice(), swapchainContext, pipelineContext.getPipeline(), deviceContext.getGraphicsQueue());
+
 			glfwPollEvents();
 		}
 

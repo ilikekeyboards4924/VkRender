@@ -7,6 +7,8 @@ public:
 	SwapchainContext(VkDevice device, VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, uint32_t queueFamilyIndex);
 	~SwapchainContext();
 
+	VkSwapchainKHR getSwapchain() const { return m_swapchain; };
+
 	VkExtent2D getExtent() const { return m_surfaceCapabilities.currentExtent; };
 	VkFormat getFormat() const { return m_surfaceFormat.format; };
 

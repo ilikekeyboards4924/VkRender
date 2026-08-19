@@ -54,11 +54,17 @@ void DeviceContext::createDevice() {
 	};
 
 	const char* deviceExtensions = { "VK_KHR_swapchain" };
-	const VkPhysicalDeviceFeatures deviceFeatures = { VK_KHR_dynamic_rendering };
-	const VkPhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeatures{
+	VkPhysicalDeviceFeatures deviceFeatures = { VK_KHR_dynamic_rendering };
+	VkPhysicalDeviceSynchronization2Features synchronization2Features{
+		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES,
+		.synchronization2 = VK_TRUE,
+	};
+	VkPhysicalDeviceDynamicRenderingFeatures dynamicRenderingFeatures{
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES,
+		.pNext = &synchronization2Features,
 		.dynamicRendering = VK_TRUE,
 	};
+
 
 	VkDeviceCreateInfo deviceInfo{
 		.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
