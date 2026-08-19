@@ -43,6 +43,8 @@ VkShaderModule PipelineContext::createShaderModule(VkDevice device, const std::v
 	VkShaderModule shaderModule;
 	if (vkCreateShaderModule(device, &shaderModuleInfo, nullptr, &shaderModule) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create shader module");
+	} else {
+		std::cout << "shader module created" << std::endl;
 	}
 
 	return shaderModule;

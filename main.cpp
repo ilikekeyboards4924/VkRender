@@ -8,6 +8,7 @@
 #include "src/vulkan/device.h"
 #include "src/vulkan/swapchain.h"
 #include "src/vulkan/pipeline.h"
+#include "src/vulkan/command.h"
 
 int main() {
 	glfwInit();
@@ -29,6 +30,7 @@ int main() {
 	{
 		SwapchainContext swapchainContext(deviceContext.getDevice(), deviceContext.getPhysicalDevice(), surface, deviceContext.getGraphicsFamilyIndex());
 		PipelineContext pipelineContext(deviceContext.getDevice(), swapchainContext.getFormat(), swapchainContext.getExtent());
+		CommandContext commandContext(deviceContext.getDevice(), deviceContext.getGraphicsFamilyIndex(), swapchainContext.getSwapchainImages().size());
 
 		while (!glfwWindowShouldClose(window)) {
 			glfwPollEvents();
