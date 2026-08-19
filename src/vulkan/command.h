@@ -8,7 +8,7 @@ public:
 	CommandContext(VkDevice device, uint32_t queueFamilyIndex, uint32_t swapchainImagesCount);
 	~CommandContext();
 
-	void drawFrame(VkDevice device, SwapchainContext& swapchainContext, VkPipeline pipeline, VkQueue queue);
+	void drawFrame(VkDevice device, SwapchainContext& swapchainContext, VkPipeline pipeline, VkQueue queue, VkBuffer vertexBuffer);
 private:
 	void createCommandPool(VkDevice device, uint32_t queueFamilyIndex);
 	void createCommandBuffers(VkDevice device);
@@ -22,7 +22,7 @@ private:
 		VkPipelineStageFlags2 srcStageBitmask,
 		VkPipelineStageFlags2 dstStageBitmask
 	);
-	void recordCommandBuffer(VkPipeline pipeline, VkImage image, VkImageView imageView, VkExtent2D extent);
+	void recordCommandBuffer(VkPipeline pipeline, VkImage image, VkImageView imageView, VkExtent2D extent, VkBuffer vertexBuffer);
 
 	VkCommandPool m_commandPool;
 	std::vector<VkCommandBuffer> m_commandBuffers;

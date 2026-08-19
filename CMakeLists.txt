@@ -38,6 +38,7 @@ add_executable(VkRender
 	src/vulkan/swapchain.cpp
 	src/vulkan/pipeline.cpp
 	src/vulkan/command.cpp
+	src/vulkan/vertex.cpp
 )
 
 add_dependencies(VkRender Shaders)

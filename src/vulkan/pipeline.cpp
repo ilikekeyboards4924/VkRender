@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include <string>
 
+#include "vertex.h" // sketchy
+
 PipelineContext::PipelineContext(VkDevice device, VkFormat format, VkExtent2D extent) {
 	m_device = device;
 
@@ -75,10 +77,10 @@ void PipelineContext::createGraphicsPipeline(VkDevice device, VkFormat format, V
 
 	VkPipelineVertexInputStateCreateInfo vertexInputStateInfo{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-		.vertexBindingDescriptionCount = 0, // zero for now, define these later for a vertex buffer
-		.pVertexBindingDescriptions = nullptr,
-		.vertexAttributeDescriptionCount = 0,
-		.pVertexAttributeDescriptions = nullptr,
+		.vertexBindingDescriptionCount = 1,
+		.pVertexBindingDescriptions = &vertexBindingDescription,
+		.vertexAttributeDescriptionCount = 3,
+		.pVertexAttributeDescriptions = vertexAttributeDescriptions.data(),
 	};
 
 	VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateInfo{

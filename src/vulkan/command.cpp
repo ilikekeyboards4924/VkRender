@@ -15,6 +15,7 @@ CommandContext::CommandContext(VkDevice device, uint32_t queueFamilyIndex, uint3
 void CommandContext::createCommandPool(VkDevice device, uint32_t queueFamilyIndex) {
 	VkCommandPoolCreateInfo commandPoolInfo{
 		.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+		.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
 		.queueFamilyIndex = queueFamilyIndex,
 	};
 	
@@ -107,7 +108,7 @@ void CommandContext::transitionImageLayout(
 	vkCmdPipelineBarrier2(m_commandBuffers[frameIndex], &dependencyInfo);
 }
 
-void CommandContext::recordCommandBuffer(VkPipeline pipeline, VkImage image, VkImageView imageView, VkExtent2D extent) {
+void CommandContext::recordCommandBuffer(VkPipeline pipeline, VkImage image, VkImageView imageView, VkExtent2D extent, VkBuffer vertexBuffer) {
 	VkCommandBufferBeginInfo commandBufferBeginInfo{ .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, };
 	vkBeginCommandBuffer(m_commandBuffers[frameIndex], &commandBufferBeginInfo);
 
@@ -148,6 +149,9 @@ void CommandContext::recordCommandBuffer(VkPipeline pipeline, VkImage image, VkI
 	const VkRect2D scissorRectangle = { VkOffset2D(0, 0), extent };
 	vkCmdSetScissor(m_commandBuffers[frameIndex], 0, 1, &scissorRectangle);
 
+	VkDeviceSize offset = 0;
+	vkCmdBindVertexBuffers(m_commandBuffers[frameIndex], 0, 1, &vertexBuffer, &offset);
+
 	vkCmdDraw(m_commandBuffers[frameIndex], 3, 1, 0, 0);
 
 	vkCmdEndRendering(m_commandBuffers[frameIndex]);
@@ -167,8 +171,8 @@ void CommandContext::recordCommandBuffer(VkPipeline pipeline, VkImage image, VkI
 }
 
 // ran into issues earlier, because i was passing swapchainContext by value, instead of by reference
-void CommandContext::drawFrame(VkDevice device, SwapchainContext& swapchainContext, VkPipeline pipeline, VkQueue queue) {
-	std::cout << "DRAW FRAME FUNCTION CHECKPOINT : ONE" << std::endl;
+void CommandContext::drawFrame(VkDevice device, SwapchainContext& swapchainContext, VkPipeline pipeline, VkQueue queue, VkBuffer vertexBuffer) {
+	//std::cout << "DRAW FRAME FUNCTION CHECKPOINT : ONE" << std::endl;
 
 	if (vkWaitForFences(device, 1, &m_frameFences[frameIndex], VK_TRUE, UINT64_MAX) != VK_SUCCESS) {
 		throw std::runtime_error("failed to wait for frame fence");
@@ -180,9 +184,9 @@ void CommandContext::drawFrame(VkDevice device, SwapchainContext& swapchainConte
 		throw std::runtime_error("failed to acquire next image");
 	}
 
-	std::cout << "DRAW FRAME FUNCTION CHECKPOINT : TWO" << std::endl;
+	//std::cout << "DRAW FRAME FUNCTION CHECKPOINT : TWO" << std::endl;
 
-	recordCommandBuffer(pipeline, swapchainContext.getSwapchainImages()[imageIndex], swapchainContext.getSwapchainImageViews()[imageIndex], swapchainContext.getExtent());
+	recordCommandBuffer(pipeline, swapchainContext.getSwapchainImages()[imageIndex], swapchainContext.getSwapchainImageViews()[imageIndex], swapchainContext.getExtent(), vertexBuffer);
 
 	VkPipelineStageFlags pipelineStageFlags = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT }; // i mean.... this sounds right?
 	VkSubmitInfo submitInfo{
@@ -208,13 +212,13 @@ void CommandContext::drawFrame(VkDevice device, SwapchainContext& swapchainConte
 		.pImageIndices = &imageIndex,
 	};
 
-	std::cout << "DRAW FRAME FUNCTION CHECKPOINT : THREE" << std::endl;
+	//std::cout << "DRAW FRAME FUNCTION CHECKPOINT : THREE" << std::endl;
 
 	if (vkQueuePresentKHR(queue, &presentInfo) != VK_SUCCESS) {
 		throw std::runtime_error("failed to present to queue");
 	}
 
-	std::cout << "DRAW FRAME FUNCTION CHECKPOINT : FOUR" << std::endl;
+	//std::cout << "DRAW FRAME FUNCTION CHECKPOINT : FOUR" << std::endl;
 
 	frameIndex = (frameIndex + 1) % 2;
 }

@@ -1,6 +1,9 @@
 #version 450
 
 layout(location = 0) out vec4 fragColor;
+layout(location = 2) in vec2 position;
+layout(location = 3) in vec3 color;
+layout(location = 4) in vec2 offset;
 
 vec2 vertices[3] = vec2[](
     vec2(0.0, -1.0),
@@ -16,7 +19,7 @@ vec4 colors[3] = vec4[](
 
 void main() {
     // make sure the w component is 1.0, not 0.0 (divide by zero error)
-	gl_Position = vec4(vertices[gl_VertexIndex], 0.0, 1.0);
+	gl_Position = vec4(position, 0.0, 1.0);
     //outColor = colors[gl_VertexIndex];
-    fragColor = colors[gl_VertexIndex];
+    fragColor = vec4(color, 1.0);
 }

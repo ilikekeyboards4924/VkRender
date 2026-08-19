@@ -6,6 +6,7 @@
 DeviceContext::DeviceContext(VkInstance instance) {
 	pickPhysicalDevice(instance);
 	pickQueueFamily();
+	pickMemoryType();
 	createDevice();
 }
 
@@ -41,7 +42,23 @@ void DeviceContext::pickQueueFamily() {
 			return;
 		}
 	}
+}
 
+void DeviceContext::pickMemoryType() {
+	VkPhysicalDeviceMemoryProperties memoryProperties;
+	vkGetPhysicalDeviceMemoryProperties(m_physicalDevice, &memoryProperties);
+
+	for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++) {
+		VkMemoryType memoryType = memoryProperties.memoryTypes[i];
+
+		if ((memoryType.propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) && (memoryType.propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)) {
+			std::cout << "found memory that is visible to host and also local to gpu" << std::endl;
+			m_memoryTypeIndex = i;
+			return;
+		}
+	}
+
+	throw std::runtime_error("unable to find memory that is visible to host and also local to gpu");
 }
 
 void DeviceContext::createDevice() {
