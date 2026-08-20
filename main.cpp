@@ -35,9 +35,9 @@ int main() {
 		PipelineContext pipelineContext(deviceContext.getDevice(), swapchainContext.getFormat(), swapchainContext.getExtent());
 		CommandContext commandContext(deviceContext.getDevice(), deviceContext.getGraphicsFamilyIndex(), swapchainContext.getSwapchainImages().size());
 
-		MemoryManager memoryManager(deviceContext.getDevice());
+		MemoryManager memoryManager(deviceContext.getDevice(), deviceContext.getMemoryTypeIndex());
 
-		memoryManager.allocateVertexBufferMemory(deviceContext.getDevice(), vertices, deviceContext.getGraphicsFamilyIndex(), deviceContext.getMemoryTypeIndex());
+		memoryManager.createVertexBuffer(deviceContext.getDevice(), vertices, deviceContext.getGraphicsFamilyIndex());
 
 		while (!glfwWindowShouldClose(window)) {
 			commandContext.drawFrame(deviceContext, swapchainContext, pipelineContext, memoryManager.getVertexBuffer());
