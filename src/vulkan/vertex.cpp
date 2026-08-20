@@ -5,8 +5,6 @@
 #include <iostream>
 #include <stdexcept>
 
-Vertex vert;
-
 VkVertexInputBindingDescription vertexBindingDescription{
 	.binding = 0,
 	.stride = 28, // probably better way to do this than hovering over struct and waiting for vs to tell me its size

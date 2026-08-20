@@ -110,8 +110,9 @@ void PipelineContext::createGraphicsPipeline(VkDevice device, VkFormat format, V
 		.depthClampEnable = VK_FALSE,
 		.rasterizerDiscardEnable = VK_FALSE,
 		.polygonMode = VK_POLYGON_MODE_FILL,
-		.cullMode = VK_CULL_MODE_BACK_BIT,
-		.frontFace = VK_FRONT_FACE_CLOCKWISE,
+		//.cullMode = VK_CULL_MODE_BACK_BIT,
+		.cullMode = VK_CULL_MODE_NONE, // for some reason after adding the descriptor set stuff, it culls it? disable for now
+		.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
 		.depthBiasEnable = VK_FALSE,
 		.lineWidth = 1.0f, // vulkan gets mad if you dont have this, even if its "polygon fill" mode
 	};

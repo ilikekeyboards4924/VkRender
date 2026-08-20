@@ -2,6 +2,7 @@
 #include "device.h"
 #include "swapchain.h"
 #include "pipeline.h"
+#include "memory.h"
 #include <vulkan/vulkan.h>
 #include <vector>
 
@@ -10,7 +11,7 @@ public:
 	CommandContext(VkDevice device, uint32_t queueFamilyIndex, uint32_t swapchainImagesCount);
 	~CommandContext();
 
-	void drawFrame(DeviceContext& deviceContext, SwapchainContext& swapchainContext, PipelineContext& pipelineContext, VkBuffer vertexBuffer);
+	void drawFrame(DeviceContext& deviceContext, SwapchainContext& swapchainContext, PipelineContext& pipelineContext, MemoryManager& memoryManager);
 private:
 	void createCommandPool(VkDevice device, uint32_t queueFamilyIndex);
 	void createCommandBuffers(VkDevice device);
@@ -24,8 +25,8 @@ private:
 		VkPipelineStageFlags2 srcStageBitmask,
 		VkPipelineStageFlags2 dstStageBitmask
 	);
-	void recordDrawCommands(PipelineContext& pipelineContext, SwapchainContext& swapchainContext, uint32_t imageIndex, VkBuffer vertexBuffer);
-	void recordCommandBuffer(PipelineContext& pipelineContext, SwapchainContext& swapchainContext, uint32_t imageIndex, VkBuffer vertexBuffer);
+	void recordDrawCommands(PipelineContext& pipelineContext, SwapchainContext& swapchainContext, uint32_t imageIndex, VkBuffer vertexBuffer, std::vector<VkDescriptorSet> descriptorSets);
+	void recordCommandBuffer(PipelineContext& pipelineContext, SwapchainContext& swapchainContext, uint32_t imageIndex, VkBuffer vertexBuffer, std::vector<VkDescriptorSet> descriptorSets);
 
 	VkCommandPool m_commandPool;
 	std::vector<VkCommandBuffer> m_commandBuffers;

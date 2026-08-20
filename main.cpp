@@ -35,12 +35,17 @@ int main() {
 		PipelineContext pipelineContext(deviceContext.getDevice(), swapchainContext.getFormat(), swapchainContext.getExtent());
 		CommandContext commandContext(deviceContext.getDevice(), deviceContext.getGraphicsFamilyIndex(), swapchainContext.getSwapchainImages().size());
 
-		MemoryManager memoryManager(deviceContext.getDevice(), deviceContext.getMemoryTypeIndex());
+		MemoryManager memoryManager(deviceContext.getDevice(), pipelineContext, deviceContext.getMemoryTypeIndex());
 
 		memoryManager.createVertexBuffer(deviceContext.getDevice(), vertices, deviceContext.getGraphicsFamilyIndex());
+		memoryManager.createUniformBuffers(deviceContext.getDevice(), deviceContext.getPhysicalDevice(), deviceContext.getGraphicsFamilyIndex());
+		memoryManager.updateUniformBuffers(0, swapchainContext.getExtent());
+
+		memoryManager.createDescriptorPool(deviceContext.getDevice());
+		memoryManager.createDescriptorSets(deviceContext.getDevice(), pipelineContext);
 
 		while (!glfwWindowShouldClose(window)) {
-			commandContext.drawFrame(deviceContext, swapchainContext, pipelineContext, memoryManager.getVertexBuffer());
+			commandContext.drawFrame(deviceContext, swapchainContext, pipelineContext, memoryManager);
 
 			glfwPollEvents();
 		}

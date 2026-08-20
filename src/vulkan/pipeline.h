@@ -10,6 +10,8 @@ public:
 
 	VkPipeline getPipeline() const { return m_graphicsPipeline; };
 	VkPipelineLayout getPipelineLayout() const { return m_pipelineLayout; };
+
+	VkDescriptorSetLayout getDescriptorSetLayout() const { return m_descriptorSetLayout; };
 private:
 	std::vector<char> readShaderFile(const std::string& filename);
 	VkShaderModule createShaderModule(VkDevice device, const std::vector<char>& codeBytes);

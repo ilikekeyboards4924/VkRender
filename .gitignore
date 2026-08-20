@@ -4,3 +4,4 @@ build/
 CMakeSettings.json
 *.user
 design.txt
+checkpoints.txt
