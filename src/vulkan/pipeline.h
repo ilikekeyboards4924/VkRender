@@ -15,7 +15,9 @@ private:
 	void createGraphicsPipeline(VkDevice device, VkFormat format, VkExtent2D extent);
 
 	VkPipeline m_graphicsPipeline = VK_NULL_HANDLE;
-	VkPipelineLayout m_pipelineLayout;
+	VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
+
+	VkDescriptorSetLayout m_descriptorSetLayout = VK_NULL_HANDLE;
 
 	VkShaderModule m_vertexShaderModule = VK_NULL_HANDLE;
 	VkShaderModule m_fragmentShaderModule = VK_NULL_HANDLE;

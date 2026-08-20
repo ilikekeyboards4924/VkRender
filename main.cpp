@@ -41,7 +41,7 @@ int main() {
 		memoryManager.allocateVertexBufferMemory(deviceContext.getDevice(), vertexBuffer, vertices, deviceContext.getGraphicsFamilyIndex(), deviceContext.getMemoryTypeIndex());
 
 		while (!glfwWindowShouldClose(window)) {
-			commandContext.drawFrame(deviceContext.getDevice(), swapchainContext, pipelineContext.getPipeline(), deviceContext.getGraphicsQueue(), vertexBuffer);
+			commandContext.drawFrame(deviceContext, swapchainContext, pipelineContext, vertexBuffer);
 
 			glfwPollEvents();
 		}

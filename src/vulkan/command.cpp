@@ -1,5 +1,7 @@
 #include "command.h"
+#include "device.h"
 #include "swapchain.h"
+#include "pipeline.h"
 #include <vector>
 #include <iostream>
 #include <stdexcept>
@@ -108,25 +110,11 @@ void CommandContext::transitionImageLayout(
 	vkCmdPipelineBarrier2(m_commandBuffers[frameIndex], &dependencyInfo);
 }
 
-void CommandContext::recordCommandBuffer(VkPipeline pipeline, VkImage image, VkImageView imageView, VkExtent2D extent, VkBuffer vertexBuffer) {
-	VkCommandBufferBeginInfo commandBufferBeginInfo{ .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, };
-	vkBeginCommandBuffer(m_commandBuffers[frameIndex], &commandBufferBeginInfo);
-
-	// transition image from undefined layout to color attachment optimal layout (prepare for drawing)
-	transitionImageLayout(
-		image,
-		VK_IMAGE_LAYOUT_UNDEFINED,
-		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-		{}, // according to docs, empty because: "(no need to wait for previous operations)"
-		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT
-	);
-
+void CommandContext::recordDrawCommands(PipelineContext& pipelineContext, SwapchainContext& swapchainContext, uint32_t imageIndex, VkBuffer vertexBuffer) {
 	VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
 	VkRenderingAttachmentInfo renderingAttachmentInfo{
 		.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-		.imageView = imageView,
+		.imageView = swapchainContext.getSwapchainImageViews()[imageIndex],
 		.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 		.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
 		.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
@@ -135,30 +123,53 @@ void CommandContext::recordCommandBuffer(VkPipeline pipeline, VkImage image, VkI
 
 	VkRenderingInfo renderingInfo{
 		.sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
-		.renderArea = { .offset = {0, 0}, .extent = extent },
+		.renderArea = {.offset = {0, 0}, .extent = swapchainContext.getExtent() },
 		.layerCount = 1,
 		.colorAttachmentCount = 1,
 		.pColorAttachments = &renderingAttachmentInfo,
 	};
 
 	vkCmdBeginRendering(m_commandBuffers[frameIndex], &renderingInfo);
-	vkCmdBindPipeline(m_commandBuffers[frameIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+	vkCmdBindPipeline(m_commandBuffers[frameIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineContext.getPipeline());
 
-	const VkViewport viewport = { 0.0f, 0.0f, static_cast<float>(extent.width), static_cast<float>(extent.height), 0.0f, 1.0f };
+	const VkViewport viewport = { 0.0f, 0.0f, static_cast<float>(swapchainContext.getExtent().width), static_cast<float>(swapchainContext.getExtent().height), 0.0f, 1.0f };
 	vkCmdSetViewport(m_commandBuffers[frameIndex], 0, 1, &viewport);
-	const VkRect2D scissorRectangle = { VkOffset2D(0, 0), extent };
+	const VkRect2D scissorRectangle = { VkOffset2D(0, 0), swapchainContext.getExtent() };
 	vkCmdSetScissor(m_commandBuffers[frameIndex], 0, 1, &scissorRectangle);
 
-	VkDeviceSize offset = 0;
+	uint64_t offset = 0;
 	vkCmdBindVertexBuffers(m_commandBuffers[frameIndex], 0, 1, &vertexBuffer, &offset);
+
+
+	//vkCmdBindDescriptorSets(m_commandBuffers[frameIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, );
+
 
 	vkCmdDraw(m_commandBuffers[frameIndex], 3, 1, 0, 0);
 
 	vkCmdEndRendering(m_commandBuffers[frameIndex]);
+}
+
+void CommandContext::recordCommandBuffer(PipelineContext& pipelineContext, SwapchainContext& swapchainContext, uint32_t imageIndex, VkBuffer vertexBuffer) {
+	// begin recording commands into command buffer
+	VkCommandBufferBeginInfo commandBufferBeginInfo{ .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, };
+	vkBeginCommandBuffer(m_commandBuffers[frameIndex], &commandBufferBeginInfo);
+
+	// transition image from undefined layout to color attachment optimal layout (prepare for drawing)
+	transitionImageLayout(
+		swapchainContext.getSwapchainImages()[imageIndex],
+		VK_IMAGE_LAYOUT_UNDEFINED,
+		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+		{}, // according to docs, empty because: "(no need to wait for previous operations)"
+		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT
+	);
+
+	recordDrawCommands(pipelineContext, swapchainContext, imageIndex, vertexBuffer);
 
 	// transition image from color attachment optimal layout, to present src layout (prepare for presentation)
 	transitionImageLayout(
-		image,
+		swapchainContext.getSwapchainImages()[imageIndex],
 		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 		VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
 		VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
@@ -171,37 +182,35 @@ void CommandContext::recordCommandBuffer(VkPipeline pipeline, VkImage image, VkI
 }
 
 // ran into issues earlier, because i was passing swapchainContext by value, instead of by reference
-void CommandContext::drawFrame(VkDevice device, SwapchainContext& swapchainContext, VkPipeline pipeline, VkQueue queue, VkBuffer vertexBuffer) {
-	//std::cout << "DRAW FRAME FUNCTION CHECKPOINT : ONE" << std::endl;
-
-	if (vkWaitForFences(device, 1, &m_frameFences[frameIndex], VK_TRUE, UINT64_MAX) != VK_SUCCESS) {
+void CommandContext::drawFrame(DeviceContext& deviceContext, SwapchainContext& swapchainContext, PipelineContext& pipelineContext, VkBuffer vertexBuffer) {
+	// wait for this frame to finish execution of old command buffer
+	if (vkWaitForFences(deviceContext.getDevice(), 1, &m_frameFences[frameIndex], VK_TRUE, UINT64_MAX) != VK_SUCCESS) {
 		throw std::runtime_error("failed to wait for frame fence");
 	}
-	vkResetFences(device, 1, &m_frameFences[frameIndex]);
+	vkResetFences(deviceContext.getDevice(), 1, &m_frameFences[frameIndex]);
 
+	// record new command buffer
 	uint32_t imageIndex = 0;
-	if (vkAcquireNextImageKHR(device, swapchainContext.getSwapchain(), UINT64_MAX, m_presentFinishedSemaphores[frameIndex], nullptr, &imageIndex) != VK_SUCCESS) {
+	if (vkAcquireNextImageKHR(deviceContext.getDevice(), swapchainContext.getSwapchain(), UINT64_MAX, m_presentFinishedSemaphores[frameIndex], nullptr, &imageIndex) != VK_SUCCESS) {
 		throw std::runtime_error("failed to acquire next image");
 	}
+	recordCommandBuffer(pipelineContext, swapchainContext, imageIndex, vertexBuffer);
 
-	//std::cout << "DRAW FRAME FUNCTION CHECKPOINT : TWO" << std::endl;
-
-	recordCommandBuffer(pipeline, swapchainContext.getSwapchainImages()[imageIndex], swapchainContext.getSwapchainImageViews()[imageIndex], swapchainContext.getExtent(), vertexBuffer);
-
-	VkPipelineStageFlags pipelineStageFlags = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT }; // i mean.... this sounds right?
+	// submit render commands to the graphics queue
+	VkPipelineStageFlags waitStages = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT }; // wait at the color output stage
 	VkSubmitInfo submitInfo{
 		.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
 		.waitSemaphoreCount = 1,
 		.pWaitSemaphores = &m_presentFinishedSemaphores[frameIndex],
-		.pWaitDstStageMask = &pipelineStageFlags, // is this correct? no idea
+		.pWaitDstStageMask = &waitStages, // wait at the color output stage
 		.commandBufferCount = 1,
 		.pCommandBuffers = &m_commandBuffers[frameIndex],
 		.signalSemaphoreCount = 1,
 		.pSignalSemaphores = &m_renderFinishedSemaphores[imageIndex],
 	};
+	vkQueueSubmit(deviceContext.getGraphicsQueue(), 1, &submitInfo, m_frameFences[frameIndex]);
 
-	vkQueueSubmit(queue, 1, &submitInfo, m_frameFences[frameIndex]);
-
+	// present finished frame
 	const VkSwapchainKHR swapchain = swapchainContext.getSwapchain();
 	VkPresentInfoKHR presentInfo{
 		.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
@@ -211,15 +220,11 @@ void CommandContext::drawFrame(VkDevice device, SwapchainContext& swapchainConte
 		.pSwapchains = &swapchain,
 		.pImageIndices = &imageIndex,
 	};
-
-	//std::cout << "DRAW FRAME FUNCTION CHECKPOINT : THREE" << std::endl;
-
-	if (vkQueuePresentKHR(queue, &presentInfo) != VK_SUCCESS) {
+	if (vkQueuePresentKHR(deviceContext.getGraphicsQueue(), &presentInfo) != VK_SUCCESS) {
 		throw std::runtime_error("failed to present to queue");
 	}
 
-	//std::cout << "DRAW FRAME FUNCTION CHECKPOINT : FOUR" << std::endl;
-
+	// next frame
 	frameIndex = (frameIndex + 1) % 2;
 }
 

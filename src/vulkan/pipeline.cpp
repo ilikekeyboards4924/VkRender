@@ -143,9 +143,25 @@ void PipelineContext::createGraphicsPipeline(VkDevice device, VkFormat format, V
 		.pDynamicStates = dynamicStates.data(),
 	};
 
+	VkDescriptorSetLayoutBinding descriptorSetLayoutBinding{
+		.binding = 0,
+		.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		.descriptorCount = 1,
+		.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+	};
+	VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo{
+		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+		.bindingCount = 1,
+		.pBindings = &descriptorSetLayoutBinding,
+	};
+	if (vkCreateDescriptorSetLayout(device, &descriptorSetLayoutInfo, nullptr, &m_descriptorSetLayout) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create descriptor set layout");
+	}
+
 	VkPipelineLayoutCreateInfo layoutInfo{
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-		.setLayoutCount = 0, // descriptor set layout count
+		.setLayoutCount = 1, // descriptor set layout count
+		.pSetLayouts = &m_descriptorSetLayout,
 		.pushConstantRangeCount = 0, // push constant range count
 	};
 	if (vkCreatePipelineLayout(device, &layoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS) {
@@ -182,4 +198,5 @@ PipelineContext::~PipelineContext() {
 	vkDestroyPipelineLayout(m_device, m_pipelineLayout, nullptr);
 	vkDestroyShaderModule(m_device, m_vertexShaderModule, nullptr);
 	vkDestroyShaderModule(m_device, m_fragmentShaderModule, nullptr);
+	vkDestroyDescriptorSetLayout(m_device, m_descriptorSetLayout, nullptr);
 }
