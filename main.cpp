@@ -9,6 +9,7 @@
 #include "src/vulkan/swapchain.h"
 #include "src/vulkan/pipeline.h"
 #include "src/vulkan/command.h"
+#include "src/vulkan/memory.h"
 
 #include "src/vulkan/vertex.h"
 
@@ -34,49 +35,17 @@ int main() {
 		PipelineContext pipelineContext(deviceContext.getDevice(), swapchainContext.getFormat(), swapchainContext.getExtent());
 		CommandContext commandContext(deviceContext.getDevice(), deviceContext.getGraphicsFamilyIndex(), swapchainContext.getSwapchainImages().size());
 
-		uint32_t queueFamilyIndex = deviceContext.getGraphicsFamilyIndex();
-		VkBufferCreateInfo bufferInfo{
-			.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-			.size = vertices.size() * sizeof(Vertex),
-			.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-			.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-			.queueFamilyIndexCount = 1,
-			.pQueueFamilyIndices = &queueFamilyIndex,
-		};
-
-		VkMemoryAllocateInfo memoryAllocateInfo{
-			.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-			.allocationSize = 1024 * 1024, // megabyte
-			.memoryTypeIndex = deviceContext.getMemoryTypeIndex(),
-		};
-
-		VkDeviceMemory deviceMemory;
-		if (vkAllocateMemory(deviceContext.getDevice(), &memoryAllocateInfo, nullptr, &deviceMemory) != VK_SUCCESS) {
-			throw std::runtime_error("failure");
-		}
+		MemoryManager memoryManager(deviceContext.getDevice());
 
 		VkBuffer vertexBuffer;
-		if (vkCreateBuffer(deviceContext.getDevice(), &bufferInfo, nullptr, &vertexBuffer) != VK_SUCCESS) {
-			throw std::runtime_error("failure");
-		}
-		if (vkBindBufferMemory(deviceContext.getDevice(), vertexBuffer, deviceMemory, 0) != VK_SUCCESS) {
-			throw std::runtime_error("failure");
-		}
-
-		void* data;
-		if (vkMapMemory(deviceContext.getDevice(), deviceMemory, 0, bufferInfo.size, 0, &data)) {
-			throw std::runtime_error("failure");
-		}
-
-		std::memcpy(data, vertices.data(), (size_t)bufferInfo.size);
-
-		vkUnmapMemory(deviceContext.getDevice(), deviceMemory);
+		memoryManager.allocateVertexBufferMemory(deviceContext.getDevice(), vertexBuffer, vertices, deviceContext.getGraphicsFamilyIndex(), deviceContext.getMemoryTypeIndex());
 
 		while (!glfwWindowShouldClose(window)) {
 			commandContext.drawFrame(deviceContext.getDevice(), swapchainContext, pipelineContext.getPipeline(), deviceContext.getGraphicsQueue(), vertexBuffer);
 
 			glfwPollEvents();
 		}
+
 
 		vkDeviceWaitIdle(deviceContext.getDevice());
 	}

@@ -41,16 +41,16 @@ std::vector<Vertex> vertices = {
 	{
 		glm::vec2(-1.0f, -1.0f),
 		glm::vec3(1.0f, 0.7f, 0.3f),
-		glm::vec2(0.0f, 0.0f),
+		glm::vec2(0.3f, 0.0f),
 	},
 	{
 		glm::vec2(1.0f, -1.0f),
 		glm::vec3(0.4f, 0.2f, 0.8f),
-		glm::vec2(0.0f, 0.0f),
+		glm::vec2(0.0f, -0.2f),
 	},
 	{
 		glm::vec2(0.0f, 1.0f),
 		glm::vec3(0.3f, 0.7f, 1.0f),
-		glm::vec2(0.0f, 0.0f),
+		glm::vec2(-0.2f, 0.0f),
 	},
 };
