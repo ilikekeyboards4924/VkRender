@@ -11,7 +11,7 @@ public:
 	
 	void createVertexBuffer(VkDevice device, std::vector<Vertex> vertices, uint32_t queueFamilyIndex);
 	void createUniformBuffers(VkDevice device, VkPhysicalDevice physicalDevice, uint32_t queueFamilyIndex);
-	void updateUniformBuffers(uint32_t imageIndex, VkExtent2D extent);
+	void updateUniformBuffers(uint32_t imageIndex, VkExtent2D extent, uint32_t testNumber);
 
 	void createDescriptorPool(VkDevice device);
 	void createDescriptorSets(VkDevice device, PipelineContext& pipelineContext);
@@ -20,6 +20,9 @@ public:
 	std::vector<VkBuffer> getUniformBuffers() const { return m_uniformBuffers; };
 
 	std::vector<VkDescriptorSet> getDescriptorSets() const { return m_descriptorSets; };
+
+
+	uint32_t testNumber = 0; // delete this
 private:
 	void allocateMemory(VkDevice device, VkDeviceMemory& memory, uint32_t memoryTypeIndex, uint64_t allocationSize);
 

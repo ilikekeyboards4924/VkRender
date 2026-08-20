@@ -25,7 +25,7 @@ vec4 colors[3] = vec4[](
 
 void main() {
     // make sure the w component is 1.0, not 0.0 (divide by zero error)
-	gl_Position = vec4((position + offset), 0.0, 1.0) * ubo.model;
+	gl_Position = vec4((position + offset), 0.0, 1.0) * ubo.model * ubo.view;
     //outColor = colors[gl_VertexIndex];
     fragColor = vec4(color, 1.0);
 }

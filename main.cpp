@@ -39,7 +39,7 @@ int main() {
 
 		memoryManager.createVertexBuffer(deviceContext.getDevice(), vertices, deviceContext.getGraphicsFamilyIndex());
 		memoryManager.createUniformBuffers(deviceContext.getDevice(), deviceContext.getPhysicalDevice(), deviceContext.getGraphicsFamilyIndex());
-		memoryManager.updateUniformBuffers(0, swapchainContext.getExtent());
+		memoryManager.updateUniformBuffers(0, swapchainContext.getExtent(), 0);
 
 		memoryManager.createDescriptorPool(deviceContext.getDevice());
 		memoryManager.createDescriptorSets(deviceContext.getDevice(), pipelineContext);

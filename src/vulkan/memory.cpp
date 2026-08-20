@@ -109,9 +109,9 @@ void MemoryManager::createUniformBuffers(VkDevice device, VkPhysicalDevice physi
 	}
 }
 
-void MemoryManager::updateUniformBuffers(uint32_t imageIndex, VkExtent2D extent) {
+void MemoryManager::updateUniformBuffers(uint32_t imageIndex, VkExtent2D extent, uint32_t testNumber) {
 	UniformBufferObject ubo{
-		.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+		.model = glm::rotate(glm::mat4(1.0f), static_cast<float>(testNumber) * glm::radians(0.5f), glm::vec3(0.0f, 0.0f, 1.0f)),
 		.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
 		.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(extent.width) / static_cast<float>(extent.height), 0.1f, 10.0f),
 	};

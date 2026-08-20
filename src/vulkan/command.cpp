@@ -187,7 +187,8 @@ void CommandContext::recordCommandBuffer(PipelineContext& pipelineContext, Swapc
 
 // ran into issues earlier, because i was passing swapchainContext by value, instead of by reference
 void CommandContext::drawFrame(DeviceContext& deviceContext, SwapchainContext& swapchainContext, PipelineContext& pipelineContext, MemoryManager& memoryManager) {
-	memoryManager.updateUniformBuffers(frameIndex, swapchainContext.getExtent()); // this is not great, i'll fix it later
+	memoryManager.updateUniformBuffers(frameIndex, swapchainContext.getExtent(), memoryManager.testNumber); // this is not great, i'll fix it later
+	memoryManager.testNumber += 1;
 
 	// wait for this frame to finish execution of old command buffer
 	if (vkWaitForFences(deviceContext.getDevice(), 1, &m_frameFences[frameIndex], VK_TRUE, UINT64_MAX) != VK_SUCCESS) {
