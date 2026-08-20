@@ -37,15 +37,13 @@ int main() {
 
 		MemoryManager memoryManager(deviceContext.getDevice());
 
-		VkBuffer vertexBuffer;
-		memoryManager.allocateVertexBufferMemory(deviceContext.getDevice(), vertexBuffer, vertices, deviceContext.getGraphicsFamilyIndex(), deviceContext.getMemoryTypeIndex());
+		memoryManager.allocateVertexBufferMemory(deviceContext.getDevice(), vertices, deviceContext.getGraphicsFamilyIndex(), deviceContext.getMemoryTypeIndex());
 
 		while (!glfwWindowShouldClose(window)) {
-			commandContext.drawFrame(deviceContext, swapchainContext, pipelineContext, vertexBuffer);
+			commandContext.drawFrame(deviceContext, swapchainContext, pipelineContext, memoryManager.getVertexBuffer());
 
 			glfwPollEvents();
 		}
-
 
 		vkDeviceWaitIdle(deviceContext.getDevice());
 	}

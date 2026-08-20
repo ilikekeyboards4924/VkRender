@@ -7,7 +7,7 @@ MemoryManager::MemoryManager(VkDevice device) {
 	m_device = device;
 }
 
-void MemoryManager::allocateVertexBufferMemory(VkDevice device, VkBuffer& vertexBuffer, std::vector<Vertex> vertices, uint32_t queueFamilyIndex, uint32_t memoryTypeIndex) {
+void MemoryManager::allocateVertexBufferMemory(VkDevice device, std::vector<Vertex> vertices, uint32_t queueFamilyIndex, uint32_t memoryTypeIndex) {
 	// create buffer
 	VkBufferCreateInfo bufferInfo{
 		.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
@@ -17,7 +17,7 @@ void MemoryManager::allocateVertexBufferMemory(VkDevice device, VkBuffer& vertex
 		.queueFamilyIndexCount = 1,
 		.pQueueFamilyIndices = &queueFamilyIndex,
 	};
-	if (vkCreateBuffer(device, &bufferInfo, nullptr, &vertexBuffer) != VK_SUCCESS) {
+	if (vkCreateBuffer(device, &bufferInfo, nullptr, &m_vertexBuffer) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create buffer");
 	}
 
@@ -30,7 +30,7 @@ void MemoryManager::allocateVertexBufferMemory(VkDevice device, VkBuffer& vertex
 	if (vkAllocateMemory(device, &memoryAllocateInfo, nullptr, &m_memory) != VK_SUCCESS) {
 		throw std::runtime_error("failed to allocate memory");
 	}
-	if (vkBindBufferMemory(device, vertexBuffer, m_memory, 0) != VK_SUCCESS) {
+	if (vkBindBufferMemory(device, m_vertexBuffer, m_memory, 0) != VK_SUCCESS) {
 		throw std::runtime_error("failed to bind buffer to memory");
 	}
 
@@ -45,4 +45,5 @@ void MemoryManager::allocateVertexBufferMemory(VkDevice device, VkBuffer& vertex
 
 MemoryManager::~MemoryManager() {
 	vkFreeMemory(m_device, m_memory, nullptr);
+	vkDestroyBuffer(m_device, m_vertexBuffer, nullptr);
 }

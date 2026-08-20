@@ -111,6 +111,7 @@ void CommandContext::transitionImageLayout(
 }
 
 void CommandContext::recordDrawCommands(PipelineContext& pipelineContext, SwapchainContext& swapchainContext, uint32_t imageIndex, VkBuffer vertexBuffer) {
+	// begin a dynamic rendering pass
 	VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
 	VkRenderingAttachmentInfo renderingAttachmentInfo{
 		.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
@@ -120,7 +121,6 @@ void CommandContext::recordDrawCommands(PipelineContext& pipelineContext, Swapch
 		.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
 		.clearValue = clearColor, // clear to black screen
 	};
-
 	VkRenderingInfo renderingInfo{
 		.sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
 		.renderArea = {.offset = {0, 0}, .extent = swapchainContext.getExtent() },
@@ -128,20 +128,27 @@ void CommandContext::recordDrawCommands(PipelineContext& pipelineContext, Swapch
 		.colorAttachmentCount = 1,
 		.pColorAttachments = &renderingAttachmentInfo,
 	};
-
 	vkCmdBeginRendering(m_commandBuffers[frameIndex], &renderingInfo);
+	
+	// bind the pipeline at the graphics bind point (shouldn't it always be the graphics point? what else do you use a pipeline for?)
 	vkCmdBindPipeline(m_commandBuffers[frameIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineContext.getPipeline());
 
+	// set the viewport and scissor, since they were defined as being dynamic during pipeline creation
 	const VkViewport viewport = { 0.0f, 0.0f, static_cast<float>(swapchainContext.getExtent().width), static_cast<float>(swapchainContext.getExtent().height), 0.0f, 1.0f };
 	vkCmdSetViewport(m_commandBuffers[frameIndex], 0, 1, &viewport);
 	const VkRect2D scissorRectangle = { VkOffset2D(0, 0), swapchainContext.getExtent() };
 	vkCmdSetScissor(m_commandBuffers[frameIndex], 0, 1, &scissorRectangle);
 
+	// bind the vertex buffer with no memory offset
 	uint64_t offset = 0;
 	vkCmdBindVertexBuffers(m_commandBuffers[frameIndex], 0, 1, &vertexBuffer, &offset);
 
 
-	//vkCmdBindDescriptorSets(m_commandBuffers[frameIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, );
+	//VkDescriptorSet descriptorSet;
+
+	//vkUpdateDescriptorSets();
+
+	//vkCmdBindDescriptorSets(m_commandBuffers[frameIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineContext.getPipelineLayout(), 0, 1, );
 
 
 	vkCmdDraw(m_commandBuffers[frameIndex], 3, 1, 0, 0);
@@ -187,7 +194,9 @@ void CommandContext::drawFrame(DeviceContext& deviceContext, SwapchainContext& s
 	if (vkWaitForFences(deviceContext.getDevice(), 1, &m_frameFences[frameIndex], VK_TRUE, UINT64_MAX) != VK_SUCCESS) {
 		throw std::runtime_error("failed to wait for frame fence");
 	}
-	vkResetFences(deviceContext.getDevice(), 1, &m_frameFences[frameIndex]);
+	if (vkResetFences(deviceContext.getDevice(), 1, &m_frameFences[frameIndex]) != VK_SUCCESS) {
+		throw std::runtime_error("failed to reset frame fence");
+	}
 
 	// record new command buffer
 	uint32_t imageIndex = 0;
@@ -208,7 +217,9 @@ void CommandContext::drawFrame(DeviceContext& deviceContext, SwapchainContext& s
 		.signalSemaphoreCount = 1,
 		.pSignalSemaphores = &m_renderFinishedSemaphores[imageIndex],
 	};
-	vkQueueSubmit(deviceContext.getGraphicsQueue(), 1, &submitInfo, m_frameFences[frameIndex]);
+	if (vkQueueSubmit(deviceContext.getGraphicsQueue(), 1, &submitInfo, m_frameFences[frameIndex]) != VK_SUCCESS) {
+		throw std::runtime_error("failed to submit command buffer to queue");
+	}
 
 	// present finished frame
 	const VkSwapchainKHR swapchain = swapchainContext.getSwapchain();

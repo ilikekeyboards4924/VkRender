@@ -143,7 +143,7 @@ void PipelineContext::createGraphicsPipeline(VkDevice device, VkFormat format, V
 		.pDynamicStates = dynamicStates.data(),
 	};
 
-	VkDescriptorSetLayoutBinding descriptorSetLayoutBinding{
+	VkDescriptorSetLayoutBinding uboLayoutBinding{
 		.binding = 0,
 		.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 		.descriptorCount = 1,
@@ -152,7 +152,7 @@ void PipelineContext::createGraphicsPipeline(VkDevice device, VkFormat format, V
 	VkDescriptorSetLayoutCreateInfo descriptorSetLayoutInfo{
 		.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 		.bindingCount = 1,
-		.pBindings = &descriptorSetLayoutBinding,
+		.pBindings = &uboLayoutBinding,
 	};
 	if (vkCreateDescriptorSetLayout(device, &descriptorSetLayoutInfo, nullptr, &m_descriptorSetLayout) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create descriptor set layout");

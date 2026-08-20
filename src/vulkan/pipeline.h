@@ -9,6 +9,7 @@ public:
 	~PipelineContext();
 
 	VkPipeline getPipeline() const { return m_graphicsPipeline; };
+	VkPipelineLayout getPipelineLayout() const { return m_pipelineLayout; };
 private:
 	std::vector<char> readShaderFile(const std::string& filename);
 	VkShaderModule createShaderModule(VkDevice device, const std::vector<char>& codeBytes);
