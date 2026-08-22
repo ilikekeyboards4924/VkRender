@@ -2,7 +2,8 @@
 #include "device.h"
 #include "swapchain.h"
 #include "pipeline.h"
-#include "memory.h"
+#include "data/model.h"
+// #include "memory.h"
 #include <vector>
 #include <iostream>
 #include <stdexcept>
@@ -111,7 +112,7 @@ void CommandContext::transitionImageLayout(
 	vkCmdPipelineBarrier2(m_commandBuffers[frameIndex], &dependencyInfo);
 }
 
-void CommandContext::recordDrawCommands(PipelineContext& pipelineContext, SwapchainContext& swapchainContext, uint32_t imageIndex, VkBuffer vertexBuffer, std::vector<VkDescriptorSet> descriptorSets) {
+void CommandContext::recordDrawCommands(PipelineContext& pipelineContext, SwapchainContext& swapchainContext, uint32_t imageIndex, Model& model) {
 	// begin a dynamic rendering pass
 	VkClearValue clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
 	VkRenderingAttachmentInfo renderingAttachmentInfo{
@@ -131,7 +132,7 @@ void CommandContext::recordDrawCommands(PipelineContext& pipelineContext, Swapch
 	};
 	vkCmdBeginRendering(m_commandBuffers[frameIndex], &renderingInfo);
 	
-	// bind the pipeline at the graphics bind point (shouldn't it always be the graphics point? what else do you use a pipeline for?)
+	// bind the pipeline at the graphics bind point
 	vkCmdBindPipeline(m_commandBuffers[frameIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineContext.getPipeline());
 
 	// set the viewport and scissor, since they were defined as being dynamic during pipeline creation
@@ -140,20 +141,17 @@ void CommandContext::recordDrawCommands(PipelineContext& pipelineContext, Swapch
 	const VkRect2D scissorRectangle = { VkOffset2D(0, 0), swapchainContext.getExtent() };
 	vkCmdSetScissor(m_commandBuffers[frameIndex], 0, 1, &scissorRectangle);
 
-	// bind the vertex buffer with no memory offset
-	uint64_t offset = 0;
-	vkCmdBindVertexBuffers(m_commandBuffers[frameIndex], 0, 1, &vertexBuffer, &offset);
+	// bind the descriptor sets that were created
+	//vkCmdBindDescriptorSets(m_commandBuffers[frameIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineContext.getPipelineLayout(), 0, 1, &descriptorSets[frameIndex], 0, nullptr);
 
-
-	vkCmdBindDescriptorSets(m_commandBuffers[frameIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineContext.getPipelineLayout(), 0, 1, &descriptorSets[frameIndex], 0, nullptr);
-
-
-	vkCmdDraw(m_commandBuffers[frameIndex], 3, 1, 0, 0);
+	// binding vertex buffers and drawing all in two simple calls. much cleaner.
+	model.bind(m_commandBuffers[frameIndex]);
+	model.draw(m_commandBuffers[frameIndex]);
 
 	vkCmdEndRendering(m_commandBuffers[frameIndex]);
 }
 
-void CommandContext::recordCommandBuffer(PipelineContext& pipelineContext, SwapchainContext& swapchainContext, uint32_t imageIndex, VkBuffer vertexBuffer, std::vector<VkDescriptorSet> descriptorSets) {
+void CommandContext::recordCommandBuffer(PipelineContext& pipelineContext, SwapchainContext& swapchainContext, uint32_t imageIndex, Model& model) {
 	// begin recording commands into command buffer
 	VkCommandBufferBeginInfo commandBufferBeginInfo{ .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, };
 	vkBeginCommandBuffer(m_commandBuffers[frameIndex], &commandBufferBeginInfo);
@@ -169,7 +167,7 @@ void CommandContext::recordCommandBuffer(PipelineContext& pipelineContext, Swapc
 		VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT
 	);
 
-	recordDrawCommands(pipelineContext, swapchainContext, imageIndex, vertexBuffer, descriptorSets);
+	recordDrawCommands(pipelineContext, swapchainContext, imageIndex, model);
 
 	// transition image from color attachment optimal layout, to present src layout (prepare for presentation)
 	transitionImageLayout(
@@ -186,10 +184,7 @@ void CommandContext::recordCommandBuffer(PipelineContext& pipelineContext, Swapc
 }
 
 // ran into issues earlier, because i was passing swapchainContext by value, instead of by reference
-void CommandContext::drawFrame(DeviceContext& deviceContext, SwapchainContext& swapchainContext, PipelineContext& pipelineContext, MemoryManager& memoryManager) {
-	memoryManager.updateUniformBuffers(frameIndex, swapchainContext.getExtent(), memoryManager.testNumber); // this is not great, i'll fix it later
-	memoryManager.testNumber += 1;
-
+void CommandContext::drawFrame(DeviceContext& deviceContext, SwapchainContext& swapchainContext, PipelineContext& pipelineContext, Model& model) {
 	// wait for this frame to finish execution of old command buffer
 	if (vkWaitForFences(deviceContext.getDevice(), 1, &m_frameFences[frameIndex], VK_TRUE, UINT64_MAX) != VK_SUCCESS) {
 		throw std::runtime_error("failed to wait for frame fence");
@@ -203,7 +198,7 @@ void CommandContext::drawFrame(DeviceContext& deviceContext, SwapchainContext& s
 	if (vkAcquireNextImageKHR(deviceContext.getDevice(), swapchainContext.getSwapchain(), UINT64_MAX, m_presentFinishedSemaphores[frameIndex], nullptr, &imageIndex) != VK_SUCCESS) {
 		throw std::runtime_error("failed to acquire next image");
 	}
-	recordCommandBuffer(pipelineContext, swapchainContext, imageIndex, memoryManager.getVertexBuffer(), memoryManager.getDescriptorSets());
+	recordCommandBuffer(pipelineContext, swapchainContext, imageIndex, model);
 
 	// submit render commands to the graphics queue
 	VkPipelineStageFlags waitStages = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT }; // wait at the color output stage

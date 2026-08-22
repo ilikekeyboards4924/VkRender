@@ -40,6 +40,7 @@ add_executable(VkRender
 	src/vulkan/command.cpp
 	src/vulkan/vertex.cpp
 	src/vulkan/memory.cpp
+	src/vulkan/data/model.cpp
 )
 
 add_dependencies(VkRender Shaders)

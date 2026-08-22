@@ -9,8 +9,12 @@
 #include "src/vulkan/swapchain.h"
 #include "src/vulkan/pipeline.h"
 #include "src/vulkan/command.h"
-#include "src/vulkan/memory.h"
 
+#include "src/vulkan/data/model.h"
+#include <glm/glm.hpp>
+#include <vector>
+
+#include "src/vulkan/memory.h"
 #include "src/vulkan/vertex.h"
 
 int main() {
@@ -35,17 +39,16 @@ int main() {
 		PipelineContext pipelineContext(deviceContext.getDevice(), swapchainContext.getFormat(), swapchainContext.getExtent());
 		CommandContext commandContext(deviceContext.getDevice(), deviceContext.getGraphicsFamilyIndex(), swapchainContext.getSwapchainImages().size());
 
-		MemoryManager memoryManager(deviceContext.getDevice(), pipelineContext, deviceContext.getMemoryTypeIndex());
+		std::vector<Model::Vertex> modelVertices{
+			{{-1.0f, -1.0f}, {1.0, 0.0, 0.0}},
+			{{1.0f, -1.0f},  {0.0, 1.0, 0.0}},
+			{{0.0f, 1.0f},   {0.0, 0.0, 1.0}},
+		};
 
-		memoryManager.createVertexBuffer(deviceContext.getDevice(), vertices, deviceContext.getGraphicsFamilyIndex());
-		memoryManager.createUniformBuffers(deviceContext.getDevice(), deviceContext.getPhysicalDevice(), deviceContext.getGraphicsFamilyIndex());
-		memoryManager.updateUniformBuffers(0, swapchainContext.getExtent(), 0);
-
-		memoryManager.createDescriptorPool(deviceContext.getDevice());
-		memoryManager.createDescriptorSets(deviceContext.getDevice(), pipelineContext);
+		Model model(deviceContext, modelVertices);
 
 		while (!glfwWindowShouldClose(window)) {
-			commandContext.drawFrame(deviceContext, swapchainContext, pipelineContext, memoryManager);
+			commandContext.drawFrame(deviceContext, swapchainContext, pipelineContext, model);
 
 			glfwPollEvents();
 		}

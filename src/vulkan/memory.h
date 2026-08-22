@@ -4,6 +4,7 @@
 #include "vertex.h"
 #include "pipeline.h"
 
+// REMOVE THIS CLASS!
 class MemoryManager {
 public:
 	MemoryManager(VkDevice device, PipelineContext& pipelineContext, uint32_t memoryTypeIndex);
