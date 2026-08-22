@@ -6,7 +6,7 @@
 #include <string>
 
 #include "data/model.h"
-#include "vertex.h" // sketchy
+
 
 PipelineContext::PipelineContext(VkDevice device, VkFormat format, VkExtent2D extent) {
 	m_device = device;

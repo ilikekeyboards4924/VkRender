@@ -2,11 +2,12 @@
 #include "device.h"
 #include "swapchain.h"
 #include "pipeline.h"
-#include "data/model.h"
-// #include "memory.h"
+#include "vk_check.h"
 #include <vector>
 #include <iostream>
 #include <stdexcept>
+
+#include "data/model.h"
 
 CommandContext::CommandContext(VkDevice device, uint32_t queueFamilyIndex, uint32_t swapchainImagesCount) {
 	m_device = device;
@@ -186,18 +187,12 @@ void CommandContext::recordCommandBuffer(PipelineContext& pipelineContext, Swapc
 // ran into issues earlier, because i was passing swapchainContext by value, instead of by reference
 void CommandContext::drawFrame(DeviceContext& deviceContext, SwapchainContext& swapchainContext, PipelineContext& pipelineContext, Model& model) {
 	// wait for this frame to finish execution of old command buffer
-	if (vkWaitForFences(deviceContext.getDevice(), 1, &m_frameFences[frameIndex], VK_TRUE, UINT64_MAX) != VK_SUCCESS) {
-		throw std::runtime_error("failed to wait for frame fence");
-	}
-	if (vkResetFences(deviceContext.getDevice(), 1, &m_frameFences[frameIndex]) != VK_SUCCESS) {
-		throw std::runtime_error("failed to reset frame fence");
-	}
+	VK_CHECK(vkWaitForFences(deviceContext.getDevice(), 1, &m_frameFences[frameIndex], VK_TRUE, UINT64_MAX), "failed to wait for frame fence");
+	VK_CHECK(vkResetFences(deviceContext.getDevice(), 1, &m_frameFences[frameIndex]), "failed to reset frame fence");
 
 	// record new command buffer
 	uint32_t imageIndex = 0;
-	if (vkAcquireNextImageKHR(deviceContext.getDevice(), swapchainContext.getSwapchain(), UINT64_MAX, m_presentFinishedSemaphores[frameIndex], nullptr, &imageIndex) != VK_SUCCESS) {
-		throw std::runtime_error("failed to acquire next image");
-	}
+	VK_CHECK(vkAcquireNextImageKHR(deviceContext.getDevice(), swapchainContext.getSwapchain(), UINT64_MAX, m_presentFinishedSemaphores[frameIndex], nullptr, &imageIndex), "failed to acquire next image in swapchain");
 	recordCommandBuffer(pipelineContext, swapchainContext, imageIndex, model);
 
 	// submit render commands to the graphics queue
@@ -212,9 +207,7 @@ void CommandContext::drawFrame(DeviceContext& deviceContext, SwapchainContext& s
 		.signalSemaphoreCount = 1,
 		.pSignalSemaphores = &m_renderFinishedSemaphores[imageIndex],
 	};
-	if (vkQueueSubmit(deviceContext.getGraphicsQueue(), 1, &submitInfo, m_frameFences[frameIndex]) != VK_SUCCESS) {
-		throw std::runtime_error("failed to submit command buffer to queue");
-	}
+	VK_CHECK(vkQueueSubmit(deviceContext.getGraphicsQueue(), 1, &submitInfo, m_frameFences[frameIndex]), "failed to submit command buffer to queue");
 
 	// present finished frame
 	const VkSwapchainKHR swapchain = swapchainContext.getSwapchain();
@@ -226,9 +219,7 @@ void CommandContext::drawFrame(DeviceContext& deviceContext, SwapchainContext& s
 		.pSwapchains = &swapchain,
 		.pImageIndices = &imageIndex,
 	};
-	if (vkQueuePresentKHR(deviceContext.getGraphicsQueue(), &presentInfo) != VK_SUCCESS) {
-		throw std::runtime_error("failed to present to queue");
-	}
+	VK_CHECK(vkQueuePresentKHR(deviceContext.getGraphicsQueue(), &presentInfo), "failed to present to queue");
 
 	// next frame
 	frameIndex = (frameIndex + 1) % 2;

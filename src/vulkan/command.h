@@ -2,10 +2,10 @@
 #include "device.h"
 #include "swapchain.h"
 #include "pipeline.h"
-//#include "memory.h"
-#include "data/model.h"
 #include <vulkan/vulkan.h>
 #include <vector>
+
+#include "data/model.h"
 
 class CommandContext {
 public:

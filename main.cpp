@@ -1,6 +1,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
+#include <glm/glm.hpp>
+#include <vector>
 #include <iostream>
 #include <stdexcept>
 
@@ -11,17 +13,13 @@
 #include "src/vulkan/command.h"
 
 #include "src/vulkan/data/model.h"
-#include <glm/glm.hpp>
-#include <vector>
 
-#include "src/vulkan/memory.h"
-#include "src/vulkan/vertex.h"
 
 int main() {
 	glfwInit();
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-	GLFWwindow* window = glfwCreateWindow(800, 600, "VkRender", nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(400, 400, "VkRender", nullptr, nullptr);
 	
 	InstanceContext instanceContext;
 	DeviceContext deviceContext(instanceContext.getInstance());
@@ -41,8 +39,8 @@ int main() {
 
 		std::vector<Model::Vertex> modelVertices{
 			{{-1.0f, -1.0f}, {1.0, 0.0, 0.0}},
-			{{1.0f, -1.0f},  {0.0, 1.0, 0.0}},
-			{{0.0f, 1.0f},   {0.0, 0.0, 1.0}},
+			{{1.0f, -1.0f},  {0.0, 1.0, 1.0}},
+			{{0.0f, 1.0f},   {1.0, 0.0, 1.0}},
 		};
 
 		Model model(deviceContext, modelVertices);
